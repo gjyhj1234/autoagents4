@@ -1,0 +1,39 @@
+name: 🤖 Copilot 子任务 (Sub-task for Copilot agent)
+description: 创建一个由 GitHub Copilot 编码代理自动处理的子任务
+title: "[sub-task] "
+labels: ["copilot-task", "status:ready"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > 该模板用于生成 **由 Copilot 编码代理自动接手** 的子任务。
+        > 只要仓库启用了 Copilot coding agent，并且把本 Issue **指派给 `Copilot`**，
+        > Copilot 就会自动开一个分支、提交代码、发起 PR。
+
+  - type: input
+    id: goal
+    attributes:
+      label: 目标（一句话）
+      description: 请用一句话描述这个子任务要做什么。
+      placeholder: "例如：在 docs/ 目录下生成一个 hello.md 文件，内容为 Hello from Copilot。"
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: 详细要求
+      description: 具体改动点、验收标准、限制条件等
+      placeholder: |
+        1. 在 docs/ 下新建 hello.md
+        2. 文件首行写入 `# Hello from Copilot`
+        3. 提交后等待 CI 自动合并
+    validations:
+      required: true
+
+  - type: input
+    id: next
+    attributes:
+      label: 下一个子任务 Issue 编号（可选）
+      description: 本 Issue 合并后，将自动把这里填写的 Issue 打上 `status:ready` 标签以触发下一个任务。留空表示本任务为最后一环。
+      placeholder: "#12"
