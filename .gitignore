@@ -1,0 +1,9 @@
+## .NET build outputs
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+## WebView2 per-user data (local only)
+**/UserData/

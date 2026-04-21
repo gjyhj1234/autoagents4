@@ -1,0 +1,55 @@
+#
+# 演示 workflow：会故意走到一个需要人工审批的环境 (production-approval)
+# 目的是让 GitHub 在 PR 上显示 "Approve and run" / "Review deployments"，
+# 这样我们开发的 WinForm 工具可以模拟点击并让流程继续。
+#
+# 同时完成最简的 "测试 + 生成一个文件" 流程，用于端到端演示。
+#
+name: copilot-task-demo
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # 1) 先跑一个普通的测试 job
+  build-and-test:
+    runs-on: ubuntu-latest
+    outputs:
+      touched: ${{ steps.touch.outputs.file }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run fake tests
+        run: |
+          echo "Running tests..."
+          ls -la
+          echo "All tests passed ✅"
+
+      - name: Verify Copilot-created file exists
+        id: touch
+        run: |
+          # 约定：Copilot 代理会在 docs/ 下创建一个新的 .md 文件
+          FILE=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'docs/*.md' | head -n1 || true)
+          if [ -z "$FILE" ]; then
+            echo "⚠ 本次 PR 没有修改 docs/ 下的 md 文件（演示任务可能还没执行到这一步）"
+          else
+            echo "file=$FILE" >> $GITHUB_OUTPUT
+            echo "✅ 发现新文件: $FILE"
+            cat "$FILE"
+          fi
+
+  # 2) 进入一个带 "required reviewers" 的环境 —— 这一 job 会被卡住等审批
+  require-approval:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: production-approval     # <—— 在仓库 Settings > Environments 里配置必须审批
+    steps:
+      - name: Mark approved
+        run: echo "✅ 审批通过，流程继续。文件 = ${{ needs.build-and-test.outputs.touched }}"
