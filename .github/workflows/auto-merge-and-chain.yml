@@ -45,6 +45,24 @@ jobs:
         with:
           script: |
             const pr_number = Number('${{ steps.findpr.outputs.number }}');
+
+            // If the PR is still a draft, convert it to ready-for-review first
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              pull_number: pr_number,
+            });
+            if (pr.draft) {
+              await github.graphql(`
+                mutation($id: ID!) {
+                  markPullRequestReadyForReview(input: { pullRequestId: $id }) {
+                    pullRequest { isDraft }
+                  }
+                }
+              `, { id: pr.node_id });
+              core.info(`PR #${pr_number} converted from draft to ready-for-review ✅`);
+            }
+
             await github.rest.pulls.merge({
               owner: context.repo.owner,
               repo:  context.repo.repo,
